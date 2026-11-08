@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>De Advieskamer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b1230;--bg2:#121b45;--panel:#1a2560;--panel2:#22306f;--line:rgba(255,255,255,.10);
+  --text:#eef1ff;--muted:#a9b3e0;--accent:#7c6cff;--accent2:#5ee0c8;--warn:#ffb86b;--danger:#ff7a8a;
+  --a:#5ee0c8;--b:#7c9bff;--c:#ffb86b;--d:#ff7a8a;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:radial-gradient(1200px 700px at 20% -10%,#1e2a6e 0%,var(--bg) 55%);color:var(--text);font-family:Inter,system-ui,sans-serif;min-height:100%}
+body{padding:0 0 60px}
+header{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;border-bottom:1px solid var(--line)}
+.brand{font-weight:800;letter-spacing:.14em;font-size:12px;text-transform:uppercase;color:var(--muted)}
+.brand b{color:var(--text)}
+.steps{display:flex;gap:18px;font-size:12px;color:var(--muted)}
+.steps span{display:flex;align-items:center;gap:6px}
+.steps i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--line)}
+.steps span.on{color:var(--text)} .steps span.on i{background:var(--accent2)}
+main{max-width:1180px;margin:0 auto;padding:28px 20px}
+.eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent2);font-weight:700;margin-bottom:8px}
+h1{font-size:34px;margin:0 0 8px;font-weight:800;letter-spacing:-.02em}
+h1 em{font-style:normal;color:var(--accent2)}
+.lead{color:var(--muted);font-size:15px;margin:0 0 26px;max-width:720px}
+.card{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:18px;padding:26px;box-shadow:0 30px 60px rgba(0,0,0,.35)}
+label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:16px 0 6px}
+textarea,input,select{width:100%;background:#0d1538;border:1px solid var(--line);color:var(--text);border-radius:10px;padding:12px 14px;font:inherit;font-size:14px;outline:none}
+textarea{min-height:110px;resize:vertical}
+textarea:focus,input:focus,select:focus{border-color:var(--accent)}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.btn{border:0;border-radius:999px;padding:12px 20px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;background:var(--accent);color:#fff;transition:.15s}
+.btn:hover{filter:brightness(1.1)} .btn:disabled{opacity:.5;cursor:default}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+.btn.sm{padding:8px 14px;font-size:13px}
+.hint{font-size:11px;color:var(--muted);margin-top:14px}
+.check{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin-top:16px;cursor:pointer}
+.check input{width:auto}
+.spin{width:28px;height:28px;border:3px solid var(--line);border-top-color:var(--accent2);border-radius:50%;animation:sp 1s linear infinite;margin:0 auto 14px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.center{text-align:center;padding:30px 10px}
+.center h3{margin:0 0 6px;font-size:18px} .center p{color:var(--muted);font-size:13px;margin:0}
+.qa{margin-top:10px}
+.qa .q{font-weight:600;font-size:14px;margin:18px 0 6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.opt{display:grid;grid-template-columns:32px 1fr;gap:10px;align-items:center;margin-top:8px}
+.badge{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;font-weight:800;font-size:13px;color:#0b1230}
+.badge.A{background:var(--a)} .badge.B{background:var(--b)} .badge.C{background:var(--c)} .badge.D{background:var(--d)} .badge.none{background:var(--line);color:var(--muted)}
+.hidden{display:none !important}
+/* room */
+.room{position:relative;margin-top:14px;border-radius:22px;background:radial-gradient(ellipse at 50% 120%,#2a3a8a 0%,#101a48 60%,#0b1230 100%);border:1px solid var(--line);padding:30px 20px 20px;overflow:hidden}
+.table{position:absolute;left:50%;bottom:-120px;width:70%;height:200px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(ellipse,#3b4fb8 0%,#1b2868 70%,transparent 72%);opacity:.6}
+.seats{position:relative;display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.seat{width:128px;text-align:center;transition:.3s;position:relative}
+.seat .av{width:84px;height:84px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px;color:#0b1230;border:3px solid transparent;transition:.3s;position:relative;overflow:visible}
+.seat .av svg,.msg .av svg{width:100%;height:100%;border-radius:50%;display:block}
+.seat.talking .av{border-color:#fff;box-shadow:0 0 0 6px rgba(94,224,200,.25),0 0 40px rgba(94,224,200,.5);transform:scale(1.08)}
+.seat.done .av{filter:saturate(1)} .seat.idle .av{filter:saturate(.3) brightness(.7)}
+.seat .vote{position:absolute;top:-6px;right:14px}
+.seat .nm{font-size:12px;font-weight:700;margin-top:8px}
+.seat .rl{font-size:10px;color:var(--muted)}
+.seat .st{font-size:10px;color:var(--accent2);margin-top:3px;min-height:12px}
+.seat:nth-child(1),.seat:nth-child(7){margin-top:40px}
+.seat:nth-child(2),.seat:nth-child(6){margin-top:20px}
+.chair{display:flex;gap:14px;align-items:flex-start;margin-top:22px;background:#0d1538;border:1px solid var(--line);border-radius:14px;padding:16px}
+.chair .av{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:800;flex:none}
+.chair .who{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.chair p{margin:6px 0 0;font-size:14px;line-height:1.5}
+.transcript{margin-top:18px;display:flex;flex-direction:column;gap:12px}
+.msg{display:grid;grid-template-columns:44px 1fr;gap:12px;background:#0d1538;border:1px solid var(--line);border-radius:14px;padding:14px}
+.msg .av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;color:#0b1230}
+.msg .h{display:flex;gap:8px;align-items:center;font-size:13px}
+.msg .h b{font-weight:700} .msg .h span{color:var(--muted);font-size:12px}
+.msg p{margin:6px 0 0;font-size:14px;line-height:1.55;color:#dfe4ff;white-space:pre-wrap}
+.msg .kp{margin-top:8px;font-size:12px;color:var(--accent2);font-weight:600}
+.tally{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.tally div{display:flex;gap:8px;align-items:center;background:#0d1538;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:13px}
+.final{margin-top:22px;border-radius:18px;padding:26px;background:linear-gradient(135deg,rgba(124,108,255,.25),rgba(94,224,200,.18));border:1px solid rgba(94,224,200,.4)}
+.final h2{margin:0 0 6px;font-size:22px}
+.final .dec{font-size:18px;font-weight:700;margin:10px 0}
+.final ul{margin:6px 0 0 18px;padding:0;font-size:14px;line-height:1.55}
+.final h4{margin:16px 0 4px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.err{background:rgba(255,122,138,.12);border:1px solid var(--danger);border-radius:10px;padding:12px;font-size:13px;margin-top:14px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.pill{font-size:12px;background:#0d1538;border:1px solid var(--line);border-radius:999px;padding:6px 12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><b>De Advieskamer</b> · zeven perspectieven</div>
+  <div class="steps" id="steps">
+    <span class="on"><i></i>1 Vraag</span><span><i></i>2 Briefing</span><span><i></i>3 Adviesraad</span><span><i></i>4 Besluit</span>
+  </div>
+</header>
+<main>
+
+<!-- STAP 1 -->
+<section id="s1">
+  <div class="eyebrow">Een goede vraag maakt het verschil</div>
+  <h1>Waar twijfel je over?</h1>
+  <p class="lead">Vertel het in je eigen woorden. De AI stelt twee à drie vragen, vult de briefing in en laat de raad meedenken.</p>
+  <div class="card">
+    <label>Jouw vraag</label>
+    <textarea id="vraag" placeholder="Bijv. Prijs verhogen voor de community zodra we 550 members aantikken? We zitten nu op 541…"></textarea>
+    <label>Bedrijfsprofiel</label>
+    <select id="profiel"><option value="none">Geen bedrijfscontext</option><option value="ehealth">eHealth Innovations (ingebouwd profiel)</option><option value="dcmr">DCMR Milieudienst Rijnmond (ingebouwd profiel)</option><option value="own">Alleen mijn eigen context</option></select>
+    <label class="check" id="useCtxRow"><input type="checkbox" id="useCtx"> Voeg ook mijn eigen aanvullende context toe <button class="btn ghost sm" type="button" id="editCtx" style="margin-left:6px">bewerken</button></label>
+    <div id="ctxBox" class="hidden">
+      <label>Eigen context (wordt alleen in deze browser bewaard)</label>
+      <textarea id="ctx" placeholder="Actuele cijfers, team, lopende trajecten, wat nu speelt…"></textarea>
+      <div class="row" style="margin-top:8px"><button class="btn sm" id="saveCtx" type="button">Opslaan</button></div>
+    </div>
+    <div id="profBox" class="hidden">
+      <label><span id="profNaam">Profiel</span> <button class="btn ghost sm" type="button" id="editProf" style="margin-left:6px">bewerken</button> <button class="btn ghost sm hidden" type="button" id="resetProf">herstel standaard</button></label>
+      <textarea id="prof" readonly style="min-height:150px;font-size:13px;color:var(--muted)"></textarea>
+      <div class="row hidden" id="profSaveRow" style="margin-top:8px"><button class="btn sm" id="saveProf" type="button">Profiel opslaan</button></div>
+    </div>
+    <div class="row" style="margin-top:22px;justify-content:space-between">
+      <button class="btn ghost" id="manual" type="button">Zelf het formulier invullen</button>
+      <button class="btn" id="sharpen" type="button">Help mij mijn vraag scherp te maken ↗</button>
+    </div>
+    <div id="s1busy" class="center hidden"><div class="spin"></div><h3 id="s1busyT">De voorzitter denkt mee</h3><p id="s1busyP">Twee à drie vragen om je dilemma scherp te krijgen.</p></div>
+    <div id="s1err" class="err hidden"></div>
+    <p class="hint">Je vraag en antwoorden worden verwerkt door Claude. De adviseurs zijn fictieve denkstijlen, geen echte personen. Prijsopties en ontbrekende doelen worden als voorstel gemarkeerd.</p>
+  </div>
+</section>
+
+<!-- VERDUIDELIJKING -->
+<section id="s1b" class="hidden">
+  <div class="eyebrow">Verduidelijking</div>
+  <h1>Drie korte vragen</h1>
+  <p class="lead">Antwoord kort; de voorzitter vult daarna de briefing voor je in.</p>
+  <div class="card">
+    <div class="qa" id="qa"></div>
+    <div class="row" style="margin-top:22px;justify-content:space-between">
+      <button class="btn ghost" id="backTo1" type="button">← Terug</button>
+      <button class="btn" id="toBriefing" type="button">Briefing laten invullen ↗</button>
+    </div>
+    <div id="qbusy" class="center hidden"><div class="spin"></div><h3>De voorzitter kiest de juiste adviseurs</h3><p>Je opties, context en doel worden ingevuld. Daarna start de adviesraad automatisch.</p></div>
+    <div id="qerr" class="err hidden"></div>
+  </div>
+</section>
+
+<!-- STAP 2 BRIEFING -->
+<section id="s2" class="hidden">
+  <div class="eyebrow">Briefing</div>
+  <h1>Zeven perspectieven. <em>Eén scherpere beslissing.</em></h1>
+  <p class="lead">Controleer de briefing. Alles wat de voorzitter heeft aangevuld, mag je aanpassen.</p>
+  <div class="card">
+    <label>De beslissing in één zin</label>
+    <input id="bVraag">
+    <div class="grid2">
+      <div><label>Context</label><textarea id="bContext"></textarea></div>
+      <div><label>Doel / wat wil je bereiken</label><textarea id="bDoel"></textarea></div>
+    </div>
+    <label>Opties</label>
+    <div class="opt"><span class="badge A">A</span><input id="oA" placeholder="Optie A"></div>
+    <div class="opt"><span class="badge B">B</span><input id="oB" placeholder="Optie B"></div>
+    <div class="opt"><span class="badge C">C</span><input id="oC" placeholder="Optie C (optioneel)"></div>
+    <div class="grid2">
+      <div><label>Randvoorwaarden / zorgen</label><textarea id="bZorgen"></textarea></div>
+      <div><label>Tijdshorizon</label><input id="bTijd" placeholder="Bijv. beslissen binnen 2 weken, effect binnen 6 maanden"></div>
+    </div>
+    <div class="row" style="margin-top:22px;justify-content:space-between">
+      <button class="btn ghost" id="backTo1b" type="button">← Terug</button>
+      <button class="btn" id="startRaad" type="button">Adviesraad starten ↗</button>
+    </div>
+    <div id="s2err" class="err hidden"></div>
+  </div>
+</section>
+
+<!-- STAP 3 RAAD -->
+<section id="s3" class="hidden">
+  <div class="topbar">
+    <div><div class="eyebrow">Adviesraad</div><h1 style="font-size:26px;margin:0" id="raadTitel">De raad buigt zich over je vraag</h1></div>
+    <div class="row"><span class="pill" id="statusPill">Voorzitter selecteert adviseurs…</span><button class="btn ghost sm" id="stopBtn" type="button">Stop</button></div>
+  </div>
+  <div class="room"><div class="table"></div><div class="seats" id="seats"></div>
+    <div class="chair"><div class="av">V</div><div><div class="who">Voorzitter</div><p id="chairText">Ik lees de briefing en nodig de adviseurs uit die hier het meest over te zeggen hebben.</p></div></div>
+  </div>
+  <div class="tally" id="tally"></div>
+  <div class="transcript" id="transcript"></div>
+  <div id="final" class="final hidden"></div>
+  <div id="s3err" class="err hidden"></div>
+  <div class="row" style="margin-top:22px;justify-content:space-between">
+    <button class="btn ghost" id="again" type="button">Nieuwe vraag</button>
+    <div class="row"><button class="btn ghost" id="copyBtn" type="button">Kopieer verslag</button><button class="btn hidden" id="followUp" type="button">Vervolgvraag aan de raad</button></div>
+  </div>
+</section>
+</main>
+
+<script>
+/* ---------- adviseurs: fictieve denkstijlen ---------- */
+const POOL=[
+ {id:"fin",naam:"Mara de Wit",rol:"Financieel strateeg",school:"Charlie Munger",kleur:"#5ee0c8",stijl:"Denkt in cashflow, marge, unit economics en risico op omzetverlies. Redeneert volgens de denkkaders van Charlie Munger: inverteren (wat zou dit zeker laten mislukken?), mentale modellen uit meerdere disciplines, incentives verklaren gedrag, vermijd domme fouten in plaats van briljant te willen zijn."},
+ {id:"groei",naam:"Ruben Aksoy",rol:"Groeistrateeg",school:"Alex Hormozi",kleur:"#7c9bff",stijl:"Gericht op schaal, aanbod en pricing. Redeneert volgens de denkkaders van Alex Hormozi: de value equation (droomresultaat × waarschijnlijkheid / tijd × moeite), een Grand Slam Offer maken waar je niet nee tegen kunt zeggen, prijs verhogen en waarde stapelen in plaats van korten, volume en consistentie in acquisitie."},
+ {id:"klant",naam:"Fenna Jacobs",rol:"Stem van de klant",school:"Jeff Bezos",kleur:"#ffb86b",stijl:"Kijkt uitsluitend door de ogen van de klant. Redeneert volgens de denkkaders van Jeff Bezos: customer obsession boven concurrentiefocus, werk terug vanuit de klant (working backwards, de persberichttest), Day 1-mentaliteit, onderscheid tussen omkeerbare en onomkeerbare beslissingen, lange termijn boven kwartaalwinst."},
+ {id:"ops",naam:"Daan Verhoeven",rol:"Operationeel directeur",school:"Gino Wickman",kleur:"#ff7a8a",stijl:"Praktisch en procesmatig. Redeneert volgens de denkkaders van Gino Wickman (EOS/Traction): visie, mensen, data, issues, processen en tractie; de juiste mensen op de juiste stoel; scorecard met meetbare weekcijfers; 90-dagen Rocks; issues benoemen, bespreken, oplossen (IDS)."},
+ {id:"risk",naam:"Noor El Idrissi",rol:"Risico & antifragiliteit",school:"Nassim Taleb",kleur:"#c792ff",stijl:"Identificeert downside, staartrisico's en reputatieschade. Redeneert volgens de denkkaders van Nassim Taleb: eerst overleven, dan winnen; asymmetrie zoeken (beperkt verlies, open upside); barbell-strategie; skin in the game; wantrouw voorspellingen en modellen, vertrouw op robuustheid en optionaliteit."},
+ {id:"brand",naam:"Sven Bakker",rol:"Merk & positionering",school:"Seth Godin",kleur:"#ffd166",stijl:"Denkt in positionering, verhaal en consistentie. Redeneert volgens de denkkaders van Seth Godin: de kleinst levensvatbare doelgroep, permission marketing, opmerkelijk zijn (purple cow), 'mensen zoals wij doen dingen zoals dit', vertrouwen en spanning in plaats van onderbreking."},
+ {id:"product",naam:"Lotte Meijer",rol:"Productdenker",school:"Marty Cagan",kleur:"#8be9fd",stijl:"Kijkt naar aanbod, waardepropositie en verpakking. Redeneert volgens de denkkaders van Marty Cagan (Inspired/Empowered): outcomes boven output, de vier risico's (waarde, bruikbaarheid, haalbaarheid, levensvatbaarheid), continu ontdekken met echte klanten, teams problemen geven in plaats van features."},
+ {id:"mensen",naam:"Tariq Haddad",rol:"Mensen & cultuur",school:"Patrick Lencioni",kleur:"#a6e3a1",stijl:"Let op team, leiderschap, energie en werkdruk. Redeneert volgens de denkkaders van Patrick Lencioni: de vijf frustraties van teamwork (vertrouwen, conflict, betrokkenheid, verantwoordelijkheid, resultaat), organisatiegezondheid boven slimheid, helderheid creëren en eindeloos herhalen, de ideale teamspeler (nederig, hongerig, slim)."},
+ {id:"lange",naam:"Hendrik Smit",rol:"Langetermijninvesteerder",school:"Warren Buffett",kleur:"#f5c2e7",stijl:"Geduldig, gericht op compounding. Redeneert volgens de denkkaders van Warren Buffett: economische slotgracht (moat), circle of competence, margin of safety, reputatie kost twintig jaar om op te bouwen en vijf minuten om te verliezen, prijs is wat je betaalt en waarde is wat je krijgt, eenvoud en geduld."},
+ {id:"prag",naam:"Iris van Dam",rol:"Pragmatische ondernemer",school:"Gary Vaynerchuk",kleur:"#fab387",stijl:"Heeft het zelf meegemaakt en hakt knopen door. Redeneert volgens de denkkaders van Gary Vaynerchuk: snelheid en uitvoering boven perfectie, aandacht is de valuta (ga waar de aandacht nu is), geduld op macro- en snelheid op microniveau, zelfbewustzijn, geef eerst waarde (jab, jab, jab, right hook), documenteer in plaats van creëren."},
+ {id:"data",naam:"Jonas Krol",rol:"Tech, data & schaal",school:"Dan Martell",kleur:"#89b4fa",stijl:"Vraagt welke data er is, hoe je meet en wat je automatiseert. Redeneert volgens de denkkaders van Dan Martell (Buy Back Your Time / SaaS Academy): koop je tijd terug (audit, transfer, fill), systemen en playbooks vóór mensen, de 10-80-10-regel voor delegeren, meet LTV/CAC, churn en payback, groei door herhaalbare processen."},
+ {id:"contra",naam:"Vera Lindqvist",rol:"Advocaat van de duivel",school:"Peter Thiel",kleur:"#eba0ac",stijl:"Daagt de vraagstelling zelf uit. Redeneert volgens de denkkaders van Peter Thiel (Zero to One): welke belangrijke waarheid geloven weinigen met jou; concurrentie is voor verliezers, zoek een monopolie in een niche; van 0 naar 1 in plaats van 1 naar n; wantrouw het 'lean' compromis en de onbepaalde toekomst; zoek de verborgen aanname die iedereen deelt."},
+ {id:"arts",naam:"Dr. Annemiek Roos",rol:"Bedrijfsarts",school:"NVAB-richtlijnen",kleur:"#94e2d5",stijl:"Gerenommeerd bedrijfsarts, 25 jaar ervaring, werkt volgens de NVAB-richtlijnen en de STECR-werkwijzers. Kijkt naar belastbaarheid, medische beperkingen en mogelijkheden, de Wet verbetering poortwachter (probleemanalyse, plan van aanpak, 42e-weeksmelding), privacy/AVG rond medische gegevens en de scheiding tussen medisch oordeel en werkgeversbeslissing. Nuchter, evidence-based, beschermt zowel werknemer als werkgever tegen slechte dossiers."},
+ {id:"case",naam:"Bram Kuipers",rol:"Casemanager verzuim",school:"Poortwachter / RNVC",kleur:"#f9e2af",stijl:"Register casemanager (RNVC/CROV), denkt vanuit de Werkwijzer Poortwachter van UWV en het eigenregiemodel. Regisseert het verzuimdossier: termijnen Poortwachter, re-integratie spoor 1 en 2, afstemming met bedrijfsarts, UWV, arbodienst en leidinggevende, loonsanctierisico, verzuimkosten en verzuimverzekering. Denkt in stappen, deadlines en dossieropbouw; praktisch en oplossingsgericht."},
+ {id:"prev",naam:"Saskia van Leeuwen",rol:"Preventiespecialist",school:"Arbeidshygiënische strategie",kleur:"#b4f8c8",stijl:"Preventiemedewerker/arbeidshygiënist, werkt volgens de arbeidshygiënische strategie (bron, collectief, individueel, PBM) en het Job Demands-Resources-model van Bakker & Demerouti voor werkdruk en bevlogenheid. Denkt aan de voorkant: RI&E en plan van aanpak, psychosociale arbeidsbelasting, werkdruk, fysieke belasting, Arbowet-verplichtingen, cultuur van veilig melden, PMO, vitaliteit. Rekent uit wat voorkomen oplevert versus wat herstellen kost."},
+ {id:"ad",naam:"Pieter Hoekstra",rol:"Arbeidsdeskundige",school:"SRA / AKC-leidraden",kleur:"#cba6f7",stijl:"Geregistreerd arbeidsdeskundige (SRA), werkt volgens de AKC-leidraden en het ICF-model (functioneren in context). Weegt belasting versus belastbaarheid op functieniveau, passend werk, aanpassingen van werk(plek) en taken, spoor 2, WIA/WGA-perspectief, schadelastbeheersing en de rechten en plichten van beide partijen. Onafhankelijk, concreet en gericht op duurzame inzetbaarheid."},
+ {id:"toezicht",naam:"Karin Westerveld",rol:"Toezichthouder",school:"LHSO / Sparrow",kleur:"#74c7ec",stijl:"Senior toezichthouder milieu bij een omgevingsdienst, denkt volgens de Landelijke Handhavingsstrategie Omgevingsrecht en de probleemgerichte, risicogestuurde toezichtfilosofie van Malcolm Sparrow (The Regulatory Craft): kies het probleem, niet het proces. Denkt vanuit controle in de praktijk: naleefgedrag, risicogericht toezicht, bevindingen en bewijsvoering, meet- en registratieverplichtingen, de Landelijke Handhavingsstrategie (LHSO), informatiegestuurd werken en wat een regel of systeem in het veld daadwerkelijk controleerbaar maakt. Nuchter, feitelijk, let op uitvoerbaarheid."},
+ {id:"adviseur",naam:"Joris Mulder",rol:"Specialistisch adviseur",school:"RIVM / BBT-praktijk",kleur:"#f2cdcd",stijl:"Specialistisch adviseur milieu, leunt op de kennisbasis van RIVM, InfoMil/IPLO en de Europese BREF/BBT-praktijk (lucht/emissies, geluid, externe veiligheid, ZZS). Vertaalt beleid, normen en meetmethoden (NEN, BBT-conclusies, RIVM-stoffenlijst) naar uitvoerbare eisen en adviseert vergunningverlener en toezichthouder inhoudelijk. Denkt in data, berekeningen, onderbouwing en consistentie tussen zaken."},
+ {id:"vergunning",naam:"Esther Nijhof",rol:"Vergunningverlener",school:"Omgevingswet / IPLO",kleur:"#a6adc8",stijl:"Vergunningverlener Omgevingswet bij een omgevingsdienst, werkt met de systematiek van IPLO en de kwaliteitscriteria VTH. Denkt in aanvraag, beoordeling, voorschriften en maatwerk: zijn eisen helder, handhaafbaar en juridisch houdbaar, hoe verhouden zij zich tot BBT, het Bal en het Omgevingsplan, en wat betekent een keuze voor doorlooptijd, uniformiteit en de relatie met het bedrijf en het bevoegd gezag."},
+ {id:"jurist",naam:"Mark van der Berg",rol:"Jurist bestuurs- en omgevingsrecht",school:"Awb / Raad van State",kleur:"#fab387",stijl:"Jurist bestuursrecht en omgevingsrecht, toetst aan de Awb en de lijn van de Afdeling bestuursrechtspraak van de Raad van State. Toetst bevoegdheid, mandaat, rechtsgeldigheid van besluiten en voorschriften, motivering, zorgvuldigheid (Awb), bezwaar- en beroepsrisico, Woo/openbaarheid, AVG en grondslag voor gegevensverwerking en -uitwisseling tussen systemen en organisaties. Scherp op formuleringen en precedentwerking."}
+];
+const EHEALTH_PROFILE=`Bedrijf: eHealth Innovations (ehealthinnovations.nl), Nederland. Moedermaatschappij / holding en innovatiepartner achter een groeiende portfolio van digitale zorgproducten.
+Missie: slimme oplossingen voor de gezondheidszorg waardoor de zorgprofessional optimaal ondersteund wordt en de aandacht en zorg kan geven die cliënten verdienen. Administratieve last verlichten; de professional ondersteunen in plaats van belasten.
+Vlaggenschip: VerzuimTriage (verzuimtriage.com) — verzuimregistratiesysteem met slimme triage-scripts die worden vertaald naar gestandaardiseerde rapportages, zodat de specialist (bedrijfsarts, casemanager, arbeidsdeskundige) optimaal voorbereid het vervolggesprek ingaat. Status: live bij meerdere arbodiensten.
+Doelgroep/markt: arbodiensten, verzuim- en re-integratiedienstverleners, werkgevers met eigen verzuimbegeleiding; breder de Nederlandse gezondheidszorg.
+Pijlers: tijdwinst (automatisering van administratie), kwaliteit (gestandaardiseerde workflows en triage), veiligheid (ISO 27001 en NEN 7510, AVG; compliance by design).
+Waarden: zorgprofessional voorop (bouwen vanuit de praktijk), compliance by design, duurzame innovatie (onderhoudbaar, schaalbaar, in Nederland ontwikkeld met zorgverleners aan de tekentafel).
+Organisatie: ondernemersgedreven, klein en wendbaar; de oprichter is zelf data-/informatiemodelleur en bouwt producten mede zelf.
+Relevante kaders: Wet verbetering poortwachter, Arbowet, AVG/NEN 7510 rond medische en persoonsgegevens, positie van bedrijfsarts/casemanager/arbeidsdeskundige in het verzuimproces.`;
+const DCMR_PROFILE=`Organisatie: DCMR Milieudienst Rijnmond — omgevingsdienst voor de regio Rijnmond (gemeenten en provincie Zuid-Holland als bevoegd gezag, ca. 1,2 miljoen inwoners, haven- en industriegebied Rotterdam met veel Seveso-/BRZO-bedrijven). Voert in mandaat vergunningverlening, toezicht en handhaving (VTH) uit op milieu- en omgevingsrecht, plus advies, meldkamer/milieuklachten en monitoring van lucht, geluid en veiligheid.
+Kaders: Omgevingswet (Bal, Bkl, Omgevingsplannen), Awb, Landelijke Handhavingsstrategie Omgevingsrecht, BBT-conclusies, Europese richtlijnen (RIE, Seveso), kwaliteitscriteria VTH, Woo, AVG/BIO voor informatiebeveiliging.
+Werkwijze: risicogericht en informatiegestuurd toezicht; samenwerking met bevoegde gezagen, Omgevingsdienst-stelsel, Rijkswaterstaat, veiligheidsregio, GGD, OM; publieke verantwoording en transparantie wegen zwaar.
+Informatievoorziening: zaaksysteem Mozard voor VTH-zaken en VTH-objecten (incl. emissiepunten, meetverplichtingen, controle- en monitoringsregimes); een Emissieregister in ontwikkeling voor door bedrijven ingediende meetrapporten en berekende emissies per stof (stoffentabel gevoed vanuit de RIVM-stoffenlijst). Datamodellering sluit aan op CIM FLO. Rapporten worden door laboratoria opgesteld, door bedrijven ingediend en nooit gewijzigd: een correctie is een nieuw rapport.
+Rol van de vraagsteller: datamodelleur / informatieanalist, werkt aan het logisch datamodel voor emissieregistratie en de koppeling met het zaaksysteem.
+Belangen bij beslissingen: juridische houdbaarheid, uniformiteit tussen zaken, herleidbaarheid van bewijs, uitvoerbaarheid voor toezichthouders, privacy en informatiebeveiliging, doorlooptijden, publieke en politieke gevoeligheid.`;
+const PROFILES={ehealth:{naam:"eHealth Innovations",tekst:EHEALTH_PROFILE},dcmr:{naam:"DCMR Milieudienst Rijnmond",tekst:DCMR_PROFILE}};
+/* ---------- geïllustreerde avatars (SVG) ---------- */
+const LOOKS={
+ fin:{skin:"#f1c9a5",hair:"#6b4a2b",hs:"bob",shirt:"#1f6f78",glasses:true,f:"w"},
+ groei:{skin:"#c68642",hair:"#1c1c1c",hs:"short",shirt:"#2d3a8c",beard:true,f:"m"},
+ klant:{skin:"#f6d3b5",hair:"#c97b2a",hs:"long",shirt:"#d9822b",f:"w"},
+ ops:{skin:"#e8b48f",hair:"#3b2a1f",hs:"short",shirt:"#8b2e3b",f:"m"},
+ risk:{skin:"#d7a77a",hair:"#141414",hs:"bun",shirt:"#5a3f9e",f:"w"},
+ brand:{skin:"#f3cfae",hair:"#2a2a2a",hs:"bald",shirt:"#c9a227",glasses:true,f:"m"},
+ product:{skin:"#f8d9c0",hair:"#e3b23c",hs:"bob",shirt:"#2b7a9b",f:"w"},
+ mensen:{skin:"#a86a3c",hair:"#111",hs:"short",shirt:"#3d8f5a",beard:true,f:"m"},
+ lange:{skin:"#efcdb0",hair:"#cfcfcf",hs:"side",shirt:"#6b4d7a",glasses:true,f:"m"},
+ prag:{skin:"#f1c9a5",hair:"#8a3b1f",hs:"long",shirt:"#c76a2a",f:"w"},
+ data:{skin:"#e9c3a0",hair:"#4a2f1c",hs:"short",shirt:"#2f5fb3",glasses:true,f:"m"},
+ contra:{skin:"#fbe0cc",hair:"#f1e2a8",hs:"bob",shirt:"#a33b4e",f:"w"},
+ arts:{skin:"#f3cfae",hair:"#9c7a52",hs:"bun",shirt:"#2a8c84",glasses:true,f:"w",coat:true},
+ case:{skin:"#edc29c",hair:"#2d2d2d",hs:"short",shirt:"#b8902a",f:"m"},
+ prev:{skin:"#f6d3b5",hair:"#5c3a21",hs:"long",shirt:"#3f9a5a",f:"w"},
+ ad:{skin:"#e8b48f",hair:"#777",hs:"side",shirt:"#6e4fa3",beard:true,f:"m"},
+ toezicht:{skin:"#f1c9a5",hair:"#3a2a1a",hs:"bob",shirt:"#2a74a8",f:"w"},
+ adviseur:{skin:"#d9a888",hair:"#1e1e1e",hs:"short",shirt:"#a85a6b",glasses:true,f:"m"},
+ vergunning:{skin:"#f8d9c0",hair:"#7a4a2a",hs:"long",shirt:"#5a6480",f:"w"},
+ jurist:{skin:"#efcdb0",hair:"#3b3b3b",hs:"side",shirt:"#c47a2c",f:"m",tie:true}
+};
+function avatarSVG(a){
+  const L=LOOKS[a.id]||{skin:"#f1c9a5",hair:"#333",hs:"short",shirt:a.kleur};
+  const hair={
+    short:`<path d="M22 40 Q50 8 78 40 L78 46 Q50 30 22 46 Z" fill="${L.hair}"/>`,
+    side:`<path d="M22 42 Q40 12 80 36 L80 44 Q52 30 22 48 Z" fill="${L.hair}"/>`,
+    bob:`<path d="M18 48 Q20 10 50 10 Q80 10 82 48 L82 66 L74 66 L74 46 Q50 34 26 46 L26 66 L18 66 Z" fill="${L.hair}"/>`,
+    long:`<path d="M16 52 Q18 8 50 8 Q82 8 84 52 L84 90 L72 90 L72 48 Q50 34 28 48 L28 90 L16 90 Z" fill="${L.hair}"/>`,
+    bun:`<circle cx="50" cy="16" r="11" fill="${L.hair}"/><path d="M22 44 Q50 14 78 44 L78 48 Q50 34 22 48 Z" fill="${L.hair}"/>`,
+    bald:`<path d="M22 46 Q24 40 30 40 L30 50 Z M78 46 Q76 40 70 40 L70 50 Z" fill="${L.hair}"/>`
+  }[L.hs]||"";
+  const beard=L.beard?`<path d="M30 60 Q50 92 70 60 Q50 78 30 60 Z" fill="${L.hair}" opacity=".9"/>`:"";
+  const glasses=L.glasses?`<g fill="none" stroke="#1b1b1b" stroke-width="2.2"><circle cx="39" cy="52" r="7.5"/><circle cx="61" cy="52" r="7.5"/><path d="M46.5 52 L53.5 52 M31.5 50 L27 47 M68.5 50 L73 47"/></g>`:"";
+  const coat=L.coat?`<path d="M20 100 L32 78 L50 84 L68 78 L80 100 Z" fill="#f4f6fb"/>`:"";
+  const tie=L.tie?`<path d="M47 78 L53 78 L52 96 L48 96 Z" fill="#8b1e2d"/>`:"";
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="c${a.id}"><circle cx="50" cy="50" r="50"/></clipPath></defs><g clip-path="url(#c${a.id})">
+  <rect width="100" height="100" fill="${a.kleur}"/>
+  <path d="M14 100 Q14 72 50 70 Q86 72 86 100 Z" fill="${L.shirt}"/>${coat}${tie}
+  <rect x="43" y="62" width="14" height="14" fill="${L.skin}"/>
+  <ellipse cx="50" cy="48" rx="20" ry="24" fill="${L.skin}"/>
+  <ellipse cx="30" cy="50" rx="4" ry="5" fill="${L.skin}"/><ellipse cx="70" cy="50" rx="4" ry="5" fill="${L.skin}"/>
+  ${hair}
+  <circle cx="41" cy="52" r="2.2" fill="#1b1b1b"/><circle cx="59" cy="52" r="2.2" fill="#1b1b1b"/>
+  <path d="M35 45 Q41 42 46 45 M54 45 Q59 42 65 45" stroke="${L.hair}" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M50 52 L48 60 L52 60" stroke="#c98a6a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M42 65 Q50 71 58 65" stroke="#9c4a3a" stroke-width="2" fill="none" stroke-linecap="round"/>
+  ${beard}${glasses}</g></svg>`;
+}
+const $=id=>document.getElementById(id);
+const state={vragen:[],antwoorden:[],briefing:null,raad:[],adviezen:[],final:null,abort:null};
+let sample=null;
+claude.use("sample").then(s=>{sample=s; if(!s) showErr("s1err","Deze pagina kan nu geen AI aanroepen (niet beschikbaar in deze weergave).");});
+
+/* ---------- helpers ---------- */
+function show(id){["s1","s1b","s2","s3"].forEach(s=>$(s).classList.toggle("hidden",s!==id));
+  const idx={s1:0,s1b:0,s2:1,s3:2}[id]; [...$("steps").children].forEach((el,i)=>el.classList.toggle("on",i<=idx)); window.scrollTo({top:0,behavior:"smooth"});}
+function showErr(id,msg){const e=$(id);e.textContent=msg;e.classList.remove("hidden");}
+function hideErr(id){$(id).classList.add("hidden");}
+function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function initials(n){return n.split(" ").map(w=>w[0]).slice(0,2).join("");}
+function profText(){const p=$("profiel").value; if(!PROFILES[p]) return ""; try{return localStorage.getItem("ak_prof_"+p)||PROFILES[p].tekst;}catch{return PROFILES[p].tekst;}}
+function ctxText(){
+  const p=$("profiel").value; let t="";
+  if(PROFILES[p]) t+="BEDRIJFSPROFIEL "+PROFILES[p].naam+":\n"+profText()+"\n";
+  let own=""; try{own=localStorage.getItem("ak_ctx")||"";}catch{}
+  if((p==="own"||$("useCtx").checked)&&own) t+=(t?"\nAANVULLENDE CONTEXT:\n":"")+own;
+  return t.trim();
+}
+async function ask(prompt,opts={}){
+  if(!sample) throw new Error("AI niet beschikbaar");
+  return sample.json(prompt,Object.assign({cache:false},opts));
+}
+function errMsg(e){ if(e&&e.code==="not_granted") return "Je hebt de AI-aanvraag niet toegestaan."; if(e&&e.code==="rate_limited") return "Even te veel aanvragen; probeer het zo opnieuw."; return (e&&(e.message||e.code))||"Er ging iets mis."; }
+
+/* ---------- bedrijfscontext ---------- */
+try{ $("ctx").value=localStorage.getItem("ak_ctx")||""; $("useCtx").checked=!!localStorage.getItem("ak_ctx"); }catch{}
+$("editCtx").onclick=e=>{e.preventDefault();$("ctxBox").classList.toggle("hidden");};
+$("saveCtx").onclick=()=>{try{localStorage.setItem("ak_ctx",$("ctx").value);}catch{} $("ctxBox").classList.add("hidden"); $("useCtx").checked=!!$("ctx").value;};
+/* profielkeuze */
+function applyProfiel(){const p=$("profiel").value; try{localStorage.setItem("ak_profiel",p);}catch{}
+  const has=!!PROFILES[p]; $("profBox").classList.toggle("hidden",!has); $("useCtxRow").classList.toggle("hidden",!has);
+  if(has) $("profNaam").textContent="Profiel "+PROFILES[p].naam;
+  $("prof").value=profText(); const custom=(()=>{try{return !!localStorage.getItem("ak_prof_"+p);}catch{return false;}})(); $("resetProf").classList.toggle("hidden",!custom);
+  if(p==="own") $("ctxBox").classList.remove("hidden"); }
+try{ $("profiel").value=localStorage.getItem("ak_profiel")||"ehealth"; }catch{ $("profiel").value="ehealth"; }
+$("profiel").onchange=applyProfiel; applyProfiel();
+$("editProf").onclick=()=>{$("prof").readOnly=false;$("prof").style.color="var(--text)";$("profSaveRow").classList.remove("hidden");$("prof").focus();};
+$("saveProf").onclick=()=>{try{localStorage.setItem("ak_prof_"+$("profiel").value,$("prof").value);}catch{} $("prof").readOnly=true;$("prof").style.color="var(--muted)";$("profSaveRow").classList.add("hidden");applyProfiel();};
+$("resetProf").onclick=()=>{try{localStorage.removeItem("ak_prof_"+$("profiel").value);}catch{} applyProfiel();};
+
+/* ---------- stap 1 ---------- */
+$("sharpen").onclick=async()=>{
+  const v=$("vraag").value.trim(); if(!v) return showErr("s1err","Schrijf eerst waar je over twijfelt.");
+  hideErr("s1err"); $("s1busy").classList.remove("hidden"); $("sharpen").disabled=true;
+  try{
+    const r=await ask(`Je bent de voorzitter van een adviesraad. De vraagsteller (ondernemer of professional binnen een organisatie) twijfelt over het volgende:
+"""${v}"""
+${ctxText()?`Bedrijfscontext:\n"""${ctxText()}"""\n`:""}
+Stel 2 of 3 korte, concrete verduidelijkende vragen (Nederlands, je-vorm) die nodig zijn om goed te adviseren: ontbrekende cijfers, het echte doel, de opties die overwogen worden, randvoorwaarden. Geen inleidende tekst.
+Antwoord uitsluitend als JSON: {"vragen":["...","..."]}`,{modelTier:"quick"});
+    state.vragen=(r.vragen||[]).slice(0,3);
+    $("qa").innerHTML=state.vragen.map((q,i)=>`<div class="q">${i+1}. ${esc(q)}</div><input data-i="${i}" placeholder="Jouw antwoord">`).join("");
+    show("s1b");
+  }catch(e){showErr("s1err",errMsg(e));}
+  finally{$("s1busy").classList.add("hidden");$("sharpen").disabled=false;}
+};
+$("manual").onclick=()=>{ $("bVraag").value=$("vraag").value.trim(); $("bContext").value=$("profiel").value==="none"?"":"(bedrijfsprofiel wordt automatisch meegestuurd) "; show("s2"); };
+$("backTo1").onclick=$("backTo1b").onclick=()=>show("s1");
+
+/* ---------- verduidelijking -> briefing ---------- */
+$("toBriefing").onclick=async()=>{
+  state.antwoorden=[...$("qa").querySelectorAll("input")].map(i=>i.value.trim());
+  hideErr("qerr"); $("qbusy").classList.remove("hidden"); $("toBriefing").disabled=true;
+  try{
+    const r=await ask(`Je bent voorzitter van een adviesraad. Vul de briefing in op basis van:
+Oorspronkelijke twijfel: """${$("vraag").value.trim()}"""
+${ctxText()?`Bedrijfscontext: """${ctxText()}"""\n`:""}
+Vragen en antwoorden:
+${state.vragen.map((q,i)=>`V: ${q}\nA: ${state.antwoorden[i]||"(geen antwoord)"}`).join("\n")}
+
+Formuleer in het Nederlands. Opties: minimaal 2, maximaal 3, concreet en onderling echt verschillend (bijv. nu doen / later of gefaseerd / niet doen of alternatief). Alles wat je zelf aanneemt omdat het ontbreekt, markeer je met "(voorstel)".
+Antwoord uitsluitend als JSON:
+{"vraag":"de beslissing in één zin","context":"2-4 zinnen","doel":"1-2 zinnen","opties":["A ...","B ...","C ..."],"zorgen":"randvoorwaarden en zorgen","tijd":"tijdshorizon"}`,{modelTier:"quick"});
+    $("bVraag").value=r.vraag||""; $("bContext").value=r.context||""; $("bDoel").value=r.doel||"";
+    const o=r.opties||[]; $("oA").value=(o[0]||"").replace(/^A[\s:.\-–]*/,""); $("oB").value=(o[1]||"").replace(/^B[\s:.\-–]*/,""); $("oC").value=(o[2]||"").replace(/^C[\s:.\-–]*/,"");
+    $("bZorgen").value=r.zorgen||""; $("bTijd").value=r.tijd||"";
+    show("s2");
+  }catch(e){showErr("qerr",errMsg(e));}
+  finally{$("qbusy").classList.add("hidden");$("toBriefing").disabled=false;}
+};
+
+/* ---------- stap 3: raad ---------- */
+function readBriefing(){
+  const opties=[["A",$("oA").value.trim()],["B",$("oB").value.trim()],["C",$("oC").value.trim()]].filter(x=>x[1]);
+  return {vraag:$("bVraag").value.trim(),context:$("bContext").value.trim(),doel:$("bDoel").value.trim(),opties,zorgen:$("bZorgen").value.trim(),tijd:$("bTijd").value.trim()};
+}
+function briefingText(b){const c=ctxText();return (c?`BEDRIJFSCONTEXT:\n${c}\n\n`:"")+`Beslissing: ${b.vraag}\nContext: ${b.context}\nDoel: ${b.doel}\nOpties:\n${b.opties.map(o=>`  ${o[0]}: ${o[1]}`).join("\n")}\nZorgen/randvoorwaarden: ${b.zorgen}\nTijdshorizon: ${b.tijd}`;}
+function renderSeats(raad,active,done){
+  $("seats").innerHTML=raad.map((a,i)=>{const adv=state.adviezen[i];
+    return `<div class="seat ${i===active?"talking":adv?"done":"idle"}"><div class="av">${avatarSVG(a)}${adv?`<span class="badge vote ${adv.optie||"none"}">${adv.optie||"–"}</span>`:""}</div><div class="nm">${esc(a.naam)}</div><div class="rl">${esc(a.rol)}<br><span style="color:var(--accent2)">school: ${esc(a.school)}</span></div><div class="st">${i===active?"Aan het woord":adv?`Optie ${adv.optie||"–"}`:(done?"":"Wacht")}</div></div>`;}).join("");
+}
+function renderTally(b){
+  const counts={}; state.adviezen.forEach(a=>{if(a.optie) counts[a.optie]=(counts[a.optie]||0)+1;});
+  $("tally").innerHTML=b.opties.map(o=>`<div><span class="badge ${o[0]}">${o[0]}</span> ${esc(o[1].slice(0,60))}${o[1].length>60?"…":""} <b>${counts[o[0]]||0}</b></div>`).join("");
+}
+$("startRaad").onclick=async()=>{
+  const b=readBriefing(); if(!b.vraag||b.opties.length<2) return showErr("s2err","Vul de beslissing en minimaal twee opties in.");
+  hideErr("s2err"); state.briefing=b; state.adviezen=[]; state.final=null; state.abort=new AbortController();
+  $("transcript").innerHTML=""; $("final").classList.add("hidden"); $("followUp").classList.add("hidden"); hideErr("s3err"); $("tally").innerHTML="";
+  $("raadTitel").textContent=b.vraag; $("statusPill").textContent="Voorzitter selecteert adviseurs…"; $("chairText").textContent="Ik lees de briefing en nodig de adviseurs uit die hier het meest over te zeggen hebben.";
+  show("s3"); $("seats").innerHTML="";
+  const sig=state.abort.signal;
+  try{
+    /* 1. voorzitter kiest 7 */
+    const sel=await ask(`Je bent voorzitter van een adviesraad. Kies uit onderstaande adviseurs (fictieve denkstijlen) precies 7 die het meest relevant zijn voor deze briefing en voor de organisatiecontext (publieke organisatie: kies vooral de bestuurlijk-juridische en uitvoeringsrollen; ondernemer: vooral de commerciële en financiële rollen), en bepaal een logische spreekvolgorde (begin met wie het kader zet, eindig met de advocaat van de duivel als die gekozen is).
+Adviseurs:
+${POOL.map(a=>`- id=${a.id}: ${a.rol} (school: ${a.school}) — ${a.stijl}`).join("\n")}
+
+Briefing:
+${briefingText(b)}
+
+Antwoord uitsluitend als JSON: {"gekozen":["id1","id2","id3","id4","id5","id6","id7"],"opening":"1-2 zinnen waarin je als voorzitter de vraag scherp neerzet en de raad opent (Nederlands, je-vorm richting de ondernemer)"}`,{modelTier:"quick",signal:sig});
+    const ids=(sel.gekozen||[]).filter(id=>POOL.some(p=>p.id===id)); const extra=POOL.filter(p=>!ids.includes(p.id)).map(p=>p.id);
+    state.raad=[...ids,...extra].slice(0,7).map(id=>POOL.find(p=>p.id===id));
+    $("chairText").textContent=sel.opening||"De raad is compleet. We gaan van start.";
+    renderSeats(state.raad,-1,false); renderTally(b);
+    /* 2. adviseurs om de beurt */
+    for(let i=0;i<state.raad.length;i++){
+      if(sig.aborted) break; const a=state.raad[i];
+      $("statusPill").textContent=`${a.naam} is aan het woord (${i+1}/7)`; renderSeats(state.raad,i,false);
+      const eerder=state.adviezen.map((x,j)=>`${state.raad[j].rol} koos ${x.optie}: ${x.kern}`).join("\n");
+      const r=await ask(`Je bent ${a.naam}, ${a.rol}, lid van een adviesraad. Jouw denkstijl: ${a.stijl}
+Je past de denkkaders van jouw school (${a.school}) expliciet toe op deze casus en mag die kaders bij naam noemen, maar je doet je niet voor als die persoon en verzint geen citaten van echte personen.
+Spreek in het Nederlands, in de ik-vorm, direct tegen de vraagsteller (je-vorm), 90-140 woorden. Wees concreet en durf te kiezen. Blijf strikt in jouw perspectief; herhaal niet wat eerdere adviseurs al zeiden, reageer er eventueel kort op.
+
+Briefing:
+${briefingText(b)}
+${eerder?`\nEerdere adviseurs:\n${eerder}\n`:""}
+Antwoord uitsluitend als JSON: {"advies":"jouw betoog","optie":"A|B|C (de letter van de optie die jij kiest)","kern":"één zin met je kernargument"}`,{signal:sig});
+      const optie=String(r.optie||"").trim().toUpperCase().replace(/[^ABC]/g,"").slice(0,1)||null;
+      state.adviezen.push({advies:r.advies||"",optie,kern:r.kern||""});
+      $("transcript").insertAdjacentHTML("beforeend",`<div class="msg"><div class="av">${avatarSVG(a)}</div><div><div class="h"><b>${esc(a.naam)}</b><span>${esc(a.rol)} · school: ${esc(a.school)}</span>${optie?`<span class="badge ${optie}" style="width:24px;height:24px;font-size:11px">${optie}</span>`:""}</div><p>${esc(r.advies)}</p><div class="kp">Kern: ${esc(r.kern)}</div></div></div>`);
+      renderSeats(state.raad,-1,false); renderTally(b);
+    }
+    if(sig.aborted) return;
+    /* 3. voorzitter besluit */
+    $("statusPill").textContent="Voorzitter formuleert het besluit…"; $("chairText").textContent="Dank. Ik weeg de perspectieven en kom tot één advies.";
+    const f=await ask(`Je bent voorzitter van een adviesraad voor een ondernemer. De 7 adviseurs hebben gesproken. Formuleer één scherpe beslissing: geen compromis-brij, maar een duidelijke keuze met voorwaarden. Nederlands, je-vorm, zakelijk en warm.
+
+Briefing:
+${briefingText(b)}
+
+Adviezen:
+${state.adviezen.map((x,j)=>`${state.raad[j].naam} (${state.raad[j].rol}) — optie ${x.optie}: ${x.advies}`).join("\n\n")}
+
+Antwoord uitsluitend als JSON:
+{"optie":"A|B|C","besluit":"de beslissing in één krachtige zin","waarom":["3-4 bullets met de doorslaggevende argumenten"],"voorwaarden":["2-3 voorwaarden of mitsen"],"risico":"het grootste risico en hoe je het afdekt (1-2 zinnen)","eerste_stap":"wat je deze week concreet doet","meting":"waaraan je over X weken ziet of het werkt"}`,{signal:sig,modelTier:"complex"});
+    state.final=f; renderSeats(state.raad,-1,true);
+    $("statusPill").textContent="Besluit genomen";
+    [...$("steps").children].forEach(el=>el.classList.add("on"));
+    $("chairText").textContent=f.besluit||"";
+    const opt=String(f.optie||"").toUpperCase().replace(/[^ABC]/g,"").slice(0,1);
+    const optTxt=(b.opties.find(o=>o[0]===opt)||[])[1]||"";
+    $("final").innerHTML=`<div class="eyebrow">Besluit van de voorzitter</div><h2>${opt?`<span class="badge ${opt}" style="vertical-align:middle;margin-right:8px">${opt}</span>`:""}${esc(optTxt)}</h2><div class="dec">${esc(f.besluit||"")}</div>
+      <h4>Waarom</h4><ul>${(f.waarom||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
+      <h4>Voorwaarden</h4><ul>${(f.voorwaarden||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
+      <h4>Grootste risico</h4><p style="margin:0;font-size:14px;line-height:1.5">${esc(f.risico||"")}</p>
+      <h4>Eerste stap deze week</h4><p style="margin:0;font-size:14px;line-height:1.5">${esc(f.eerste_stap||"")}</p>
+      <h4>Zo meet je het</h4><p style="margin:0;font-size:14px;line-height:1.5">${esc(f.meting||"")}</p>`;
+    $("final").classList.remove("hidden"); $("followUp").classList.remove("hidden");
+    $("final").scrollIntoView({behavior:"smooth",block:"start"});
+  }catch(e){ if(e&&e.name==="AbortError") return; showErr("s3err",errMsg(e)); $("statusPill").textContent="Gestopt"; }
+};
+$("stopBtn").onclick=()=>{ if(state.abort) state.abort.abort(); $("statusPill").textContent="Gestopt"; renderSeats(state.raad,-1,true); };
+$("again").onclick=()=>{ if(state.abort) state.abort.abort(); show("s1"); };
+$("copyBtn").onclick=async()=>{
+  const b=state.briefing; if(!b) return;
+  let t=`DE ADVIESKAMER — verslag\n\n${briefingText(b)}\n\nADVIEZEN\n`+state.adviezen.map((x,j)=>`\n${state.raad[j].naam} (${state.raad[j].rol}) — optie ${x.optie}\n${x.advies}\nKern: ${x.kern}`).join("\n");
+  if(state.final){const f=state.final;t+=`\n\nBESLUIT VOORZITTER — optie ${f.optie}\n${f.besluit}\nWaarom:\n${(f.waarom||[]).map(x=>"- "+x).join("\n")}\nVoorwaarden:\n${(f.voorwaarden||[]).map(x=>"- "+x).join("\n")}\nRisico: ${f.risico}\nEerste stap: ${f.eerste_stap}\nMeting: ${f.meting}`;}
+  try{await navigator.clipboard.writeText(t);$("copyBtn").textContent="Gekopieerd ✓";setTimeout(()=>$("copyBtn").textContent="Kopieer verslag",1800);}catch{showErr("s3err","Kopiëren lukte niet in deze weergave; selecteer de tekst handmatig.");}
+};
+/* vervolgvraag: voorzitter antwoordt namens de raad */
+$("followUp").onclick=async()=>{
+  const q=window.__fq||"";
+  const box=document.createElement("div"); box.className="card"; box.style.marginTop="14px";
+  box.innerHTML=`<label>Vervolgvraag aan de raad</label><textarea id="fqText" placeholder="Bijv. En als we de huidige members hun prijs laten houden?"></textarea><div class="row" style="margin-top:10px"><button class="btn sm" id="fqSend" type="button">Vraag stellen</button></div><div id="fqOut"></div>`;
+  $("final").after(box); $("followUp").classList.add("hidden");
+  box.querySelector("#fqSend").onclick=async()=>{
+    const v=box.querySelector("#fqText").value.trim(); if(!v) return;
+    const out=box.querySelector("#fqOut"); out.innerHTML=`<div class="center"><div class="spin"></div><p>De voorzitter overlegt met de raad…</p></div>`;
+    try{
+      const r=await ask(`Je bent voorzitter van een adviesraad. Eerder besluit: ${JSON.stringify(state.final)}.
+Briefing: ${briefingText(state.briefing)}
+Adviezen (kort): ${state.adviezen.map((x,j)=>`${state.raad[j].rol} (${x.optie}): ${x.kern}`).join(" | ")}
+De ondernemer stelt een vervolgvraag: """${v}"""
+Antwoord in het Nederlands, je-vorm, max 150 woorden; benoem of en hoe het besluit verandert. Antwoord uitsluitend als JSON: {"antwoord":"..."}`,{modelTier:"quick"});
+      out.innerHTML=`<div class="chair" style="margin-top:14px"><div class="av">V</div><div><div class="who">Voorzitter</div><p>${esc(r.antwoord||"")}</p></div></div>`;
+      $("followUp").classList.remove("hidden");
+    }catch(e){out.innerHTML=`<div class="err">${esc(errMsg(e))}</div>`;}
+  };
+};
+</script>
+</body>
+</html>
