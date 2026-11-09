@@ -85,6 +85,12 @@ textarea:focus,input:focus,select:focus{border-color:var(--accent)}
 .final ul{margin:6px 0 0 18px;padding:0;font-size:14px;line-height:1.55}
 .final h4{margin:16px 0 4px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .err{background:rgba(255,122,138,.12);border:1px solid var(--danger);border-radius:10px;padding:12px;font-size:13px;margin-top:14px}
+.overlay{position:fixed;inset:0;background:rgba(5,9,30,.75);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
+.modal{max-width:560px;width:100%;background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--warn);border-radius:18px;padding:24px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.modal h3{margin:0 0 6px;font-size:18px;color:var(--warn)}
+.modal p{font-size:13px;color:var(--muted);margin:0 0 12px}
+.modal ul{margin:0 0 14px 18px;padding:0;font-size:13px;line-height:1.6}
+.modal code{background:#0d1538;padding:1px 6px;border-radius:6px;font-size:12px}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
 .pill{font-size:12px;background:#0d1538;border:1px solid var(--line);border-radius:999px;padding:6px 12px;color:var(--muted)}
 </style>
@@ -101,7 +107,7 @@ textarea:focus,input:focus,select:focus{border-color:var(--accent)}
 <!-- STAP 1 -->
 <section id="s1">
   <div class="eyebrow">Een goede vraag maakt het verschil</div>
-  <h1>Welk advies wil je?</h1>
+  <h1>Waar wil je over geadviseerd worden?</h1>
   <p class="lead">Vertel het in je eigen woorden. De AI stelt twee à drie vragen, vult de briefing in en laat de raad meedenken.</p>
   <div class="card">
     <label>Jouw vraag</label>
@@ -125,7 +131,7 @@ textarea:focus,input:focus,select:focus{border-color:var(--accent)}
     </div>
     <div id="s1busy" class="center hidden"><div class="spin"></div><h3 id="s1busyT">De voorzitter denkt mee</h3><p id="s1busyP">Twee à drie vragen om je dilemma scherp te krijgen.</p></div>
     <div id="s1err" class="err hidden"></div>
-    <p class="hint">Je vraag en antwoorden worden verwerkt door Claude. De adviseurs zijn fictieve denkstijlen, geen echte personen. Prijsopties en ontbrekende doelen worden als voorstel gemarkeerd.</p>
+    <p class="hint">Voor verzending controleert de app je tekst lokaal op persoonsgegevens en bedrijfsgevoelige informatie en waarschuwt je. Je vraag en antwoorden worden verwerkt door Claude. De adviseurs zijn fictieve denkstijlen, geen echte personen. Prijsopties en ontbrekende doelen worden als voorstel gemarkeerd.</p>
   </div>
 </section>
 
@@ -192,8 +198,57 @@ textarea:focus,input:focus,select:focus{border-color:var(--accent)}
   </div>
 </section>
 </main>
+<div id="privOverlay" class="overlay hidden"><div class="modal">
+  <h3>⚠ Let op: mogelijk gevoelige informatie</h3>
+  <p>Je tekst wordt naar de AI gestuurd. Deze controle draait alleen in je browser en vond het volgende:</p>
+  <ul id="privList"></ul>
+  <p id="privTip">Tip: gebruik rollen of initialen in plaats van namen, rond cijfers af en laat identificerende nummers weg.</p>
+  <div class="row" style="justify-content:flex-end">
+    <button class="btn ghost sm" id="privEdit" type="button">Aanpassen</button>
+    <button class="btn ghost sm" id="privAnon" type="button">Automatisch anonimiseren</button>
+    <button class="btn sm" id="privGo" type="button" style="background:var(--warn);color:#0b1230">Toch doorgaan</button>
+  </div>
+</div></div>
 
 <script>
+/* ---------- privacycheck (lokaal, zonder AI) ---------- */
+const PII=[
+ {k:"E-mailadres",re:/[\w.+-]+@[\w-]+\.[\w.]+/g,tag:"[E-MAIL]"},
+ {k:"IBAN",re:/\b[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4}){2,7}(?:\s?[A-Z0-9]{1,4})?\b/g,tag:"[IBAN]"},
+ {k:"Telefoonnummer",re:/(?:\+31|0031|0)\s?[1-9](?:[\s-]?\d){8}\b/g,tag:"[TELEFOON]"},
+ {k:"Geboortedatum",re:/\b(?:geboren|geb\.?|geboortedatum)\s*(?:op\s*)?:?\s*\d{1,2}[-\/ ](?:\d{1,2}|[a-z]+)[-\/ ]\d{2,4}/gi,tag:"[GEBOORTEDATUM]"},
+ {k:"Postcode + huisnummer",re:/\b\d{4}\s?[A-Z]{2}\b(?:\s*\d{1,4}[a-zA-Z]?)?|\b[A-Z][a-z]+(?:straat|laan|weg|plein|kade|dijk|singel|hof)\s\d{1,4}[a-zA-Z]?\b/g,tag:"[ADRES]"},
+ {k:"Kenteken",re:/\b(?:[A-Z]{2}-\d{2}-\d{2}|\d{2}-[A-Z]{2}-\d{2}|\d{2}-[A-Z]{3}-\d|\d-[A-Z]{3}-\d{2}|[A-Z]{2}-\d{3}-[A-Z]|[A-Z]-\d{3}-[A-Z]{2}|[A-Z]{3}-\d{2}-[A-Z])\b/g,tag:"[KENTEKEN]"}
+];
+function isBSN(s){const d=s.replace(/\D/g,""); if(d.length!==9) return false; let t=0; for(let i=0;i<8;i++) t+=parseInt(d[i])*(9-i); t-=parseInt(d[8]); return t%11===0;}
+const SENSW=["vertrouwelijk","geheim","confidentieel","niet voor publicatie","onder embargo","wachtwoord","inlog","api[- ]?key","token","personeelsdossier","functioneringsgesprek","ontslag","ziek(te|melding|verzuim)","diagnose","medisch","burn-?out","loonbeslag","schuld(en)?","strafblad","aangifte","klokkenluider","overname","fusie","due diligence","jaarrekening","omzetcijfers","marge(s)?","offerte","contractwaarde","tarief(afspraak|afspraken)","concurrentiegevoelig","aanbesteding","inschrijving","handhavingsbesluit","dwangsom","proces-verbaal","bedrijfsnaam","bv\\b","b\\.v\\."];
+const SENSRE=new RegExp("\\b(?:"+SENSW.join("|")+")","gi");
+function scanSensitive(text){
+  const found=[]; 
+  for(const p of PII){const m=text.match(p.re); if(m) found.push({k:p.k,items:[...new Set(m)].slice(0,4),tag:p.tag,re:p.re});}
+  const bsn=(text.match(/\b\d{9}\b|\b\d{3}[ .-]\d{3}[ .-]\d{3}\b/g)||[]).filter(isBSN); if(bsn.length) found.push({k:"BSN (geldig volgens 11-proef)",items:[...new Set(bsn)],tag:"[BSN]",re:null,vals:bsn});
+  const names=text.match(/\b(?:[Dd]hr\.?|[Mm]evr\.?|[Mm]w\.?|[Dd]e heer|[Mm]evrouw|[Mm]eneer|[Cc]ollega|[Mm]edewerker|[Ww]erknemer|[Cc]liënt|[Pp]atiënt|[Dd]irecteur)\s+(?:[A-Z]\.\s*)*(?:van|de|der|den|te|ter)?\s*[A-Z][a-zéëï]+(?:\s[A-Z][a-z]+)?/g); if(names) found.push({k:"Naam van een persoon",items:[...new Set(names)].slice(0,4),tag:"[NAAM]",re:null,vals:names});
+  const words=[...new Set((text.match(SENSRE)||[]).map(w=>w.toLowerCase()))]; if(words.length) found.push({k:"Signaalwoorden bedrijfsgevoelig / persoonlijk",items:words.slice(0,8),tag:null});
+  return found;
+}
+function anonymize(text,found){
+  let t=text;
+  for(const f of found){ if(!f.tag) continue; if(f.re) t=t.replace(f.re,f.tag); else for(const v of (f.vals||[])) t=t.split(v).join(f.tag); }
+  return t;
+}
+/* gate: roept cb() aan als er niets gevonden is of de gebruiker bevestigt; fields = [{el}] om te anonimiseren */
+function privacyGate(fields,cb){
+  const text=fields.map(f=>f.el.value||"").join("\n");
+  const found=scanSensitive(text);
+  if(!found.length) return cb();
+  $("privList").innerHTML=found.map(f=>`<li><b>${esc(f.k)}</b>: ${f.items.map(i=>`<code>${esc(i)}</code>`).join(" ")}</li>`).join("");
+  $("privAnon").classList.toggle("hidden",!found.some(f=>f.tag));
+  $("privOverlay").classList.remove("hidden");
+  const close=()=>{$("privOverlay").classList.add("hidden");};
+  $("privEdit").onclick=()=>{close(); fields[0].el.focus();};
+  $("privGo").onclick=()=>{close(); cb();};
+  $("privAnon").onclick=()=>{ for(const f of fields){ const ff=scanSensitive(f.el.value||""); f.el.value=anonymize(f.el.value||"",ff); } close(); cb(); };
+}
 /* ---------- adviseurs: fictieve denkstijlen ---------- */
 const POOL=[
  {id:"fin",naam:"Mara de Wit",rol:"Financieel strateeg",school:"Charlie Munger",kleur:"#5ee0c8",stijl:"Denkt in cashflow, marge, unit economics en risico op omzetverlies. Redeneert volgens de denkkaders van Charlie Munger: inverteren (wat zou dit zeker laten mislukken?), mentale modellen uit meerdere disciplines, incentives verklaren gedrag, vermijd domme fouten in plaats van briljant te willen zijn."},
@@ -325,8 +380,9 @@ $("saveProf").onclick=()=>{try{localStorage.setItem("ak_prof_"+$("profiel").valu
 $("resetProf").onclick=()=>{try{localStorage.removeItem("ak_prof_"+$("profiel").value);}catch{} applyProfiel();};
 
 /* ---------- stap 1 ---------- */
-$("sharpen").onclick=async()=>{
-  const v=$("vraag").value.trim(); if(!v) return showErr("s1err","Schrijf eerst waar je over twijfelt.");
+$("sharpen").onclick=()=>{ const v=$("vraag").value.trim(); if(!v) return showErr("s1err","Schrijf eerst waar je over geadviseerd wilt worden."); privacyGate([{el:$("vraag")},{el:$("ctx")}],doSharpen); };
+async function doSharpen(){
+  const v=$("vraag").value.trim();
   hideErr("s1err"); $("s1busy").classList.remove("hidden"); $("sharpen").disabled=true;
   try{
     const r=await ask(`Je bent de voorzitter van een adviesraad. De vraagsteller (ondernemer of professional binnen een organisatie) twijfelt over het volgende:
@@ -339,12 +395,13 @@ Antwoord uitsluitend als JSON: {"vragen":["...","..."]}`,{modelTier:"quick"});
     show("s1b");
   }catch(e){showErr("s1err",errMsg(e));}
   finally{$("s1busy").classList.add("hidden");$("sharpen").disabled=false;}
-};
-$("manual").onclick=()=>{ $("bVraag").value=$("vraag").value.trim(); $("bContext").value=$("profiel").value==="none"?"":"(bedrijfsprofiel wordt automatisch meegestuurd) "; show("s2"); };
+}
+$("manual").onclick=()=>privacyGate([{el:$("vraag")},{el:$("ctx")}],()=>{ $("bVraag").value=$("vraag").value.trim(); $("bContext").value=$("profiel").value==="none"?"":"(bedrijfsprofiel wordt automatisch meegestuurd) "; show("s2"); });
 $("backTo1").onclick=$("backTo1b").onclick=()=>show("s1");
 
 /* ---------- verduidelijking -> briefing ---------- */
-$("toBriefing").onclick=async()=>{
+$("toBriefing").onclick=()=>privacyGate([...$("qa").querySelectorAll("input")].map(el=>({el})),doBriefing);
+async function doBriefing(){
   state.antwoorden=[...$("qa").querySelectorAll("input")].map(i=>i.value.trim());
   hideErr("qerr"); $("qbusy").classList.remove("hidden"); $("toBriefing").disabled=true;
   try{
@@ -363,7 +420,7 @@ Antwoord uitsluitend als JSON:
     show("s2");
   }catch(e){showErr("qerr",errMsg(e));}
   finally{$("qbusy").classList.add("hidden");$("toBriefing").disabled=false;}
-};
+}
 
 /* ---------- stap 3: raad ---------- */
 function readBriefing(){
@@ -379,7 +436,8 @@ function renderTally(b){
   const counts={}; state.adviezen.forEach(a=>{if(a.optie) counts[a.optie]=(counts[a.optie]||0)+1;});
   $("tally").innerHTML=b.opties.map(o=>`<div><span class="badge ${o[0]}">${o[0]}</span> ${esc(o[1].slice(0,60))}${o[1].length>60?"…":""} <b>${counts[o[0]]||0}</b></div>`).join("");
 }
-$("startRaad").onclick=async()=>{
+$("startRaad").onclick=()=>privacyGate(["bVraag","bContext","bDoel","oA","oB","oC","bZorgen","bTijd"].map(id=>({el:$(id)})),doStartRaad);
+async function doStartRaad(){
   const b=readBriefing(); if(!b.vraag||b.opties.length<2) return showErr("s2err","Vul de beslissing en minimaal twee opties in.");
   hideErr("s2err"); state.briefing=b; state.adviezen=[]; state.final=null; state.abort=new AbortController();
   $("transcript").innerHTML=""; $("final").classList.add("hidden"); $("followUp").classList.add("hidden"); hideErr("s3err"); $("tally").innerHTML="";
@@ -446,7 +504,7 @@ Antwoord uitsluitend als JSON:
     $("final").classList.remove("hidden"); $("followUp").classList.remove("hidden");
     $("final").scrollIntoView({behavior:"smooth",block:"start"});
   }catch(e){ if(e&&e.name==="AbortError") return; showErr("s3err",errMsg(e)); $("statusPill").textContent="Gestopt"; }
-};
+}
 $("stopBtn").onclick=()=>{ if(state.abort) state.abort.abort(); $("statusPill").textContent="Gestopt"; renderSeats(state.raad,-1,true); };
 $("again").onclick=()=>{ if(state.abort) state.abort.abort(); show("s1"); };
 $("copyBtn").onclick=async()=>{
