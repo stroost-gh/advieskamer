@@ -6,11 +6,13 @@ Live versie (claude.ai artifact): https://claude.ai/artifact/LX2n3MFw4oithDnHeSn
 
 ## Opbouw
 
-1. **Vraag** – vrije tekst, met keuze van een ingebouwd bedrijfsprofiel (DCMR Milieudienst Rijnmond) en optioneel eigen aanvullende context (lokaal opgeslagen in de browser).
+1. **Vraag** – vrije tekst, met keuze van een ingebouwd bedrijfsprofiel (DCMR Milieudienst Rijnmond) en optioneel eigen aanvullende context (lokaal opgeslagen in de browser). Achtergronddocumenten (PDF, Word, tekst, markdown) kunnen worden geüpload; ze worden in de browser uitgelezen (pdf.js, mammoth) en als context meegestuurd, niet bewaard.
 2. **Verduidelijking** – de AI stelt 2–3 vragen.
 3. **Briefing** – beslissing, context, doel, opties A/B/C, zorgen, tijdshorizon; aannames gemarkeerd als "(voorstel)".
 4. **Adviesraad** – de voorzitter selecteert 7 adviseurs; elk adviseert vanuit zijn eigen denkkader ("school") en stemt.
 5. **Besluit** – één keuze met argumenten, voorwaarden, grootste risico, eerste stap en meting. Vervolgvragen en kopieerbaar verslag.
+
+Voor verzending scant de app alle tekst (ook documenten) lokaal op persoonsgegevens en bedrijfsgevoelige signaalwoorden en waarschuwt, met de optie om automatisch te anonimiseren.
 
 ## Adviseurs
 

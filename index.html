@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>De Advieskamer</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <style>
 :root{
   --bg:#0b1230;--bg2:#121b45;--panel:#1a2560;--panel2:#22306f;--line:rgba(255,255,255,.10);
@@ -86,6 +88,12 @@ textarea:focus,input:focus,select:focus{border-color:var(--accent)}
 .final ul{margin:6px 0 0 18px;padding:0;font-size:14px;line-height:1.55}
 .final h4{margin:16px 0 4px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .err{background:rgba(255,122,138,.12);border:1px solid var(--danger);border-radius:10px;padding:12px;font-size:13px;margin-top:14px}
+.docs{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.doc{display:flex;align-items:center;gap:10px;background:#0d1538;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:13px}
+.doc .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .doc .m{color:var(--muted);font-size:12px}
+.doc button{background:none;border:0;color:var(--danger);cursor:pointer;font-size:16px}
+.drop{border:1px dashed var(--line);border-radius:10px;padding:14px;text-align:center;font-size:13px;color:var(--muted);cursor:pointer;margin-top:6px}
+.drop:hover,.drop.over{border-color:var(--accent2);color:var(--text)}
 .overlay{position:fixed;inset:0;background:rgba(5,9,30,.75);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
 .modal{max-width:560px;width:100%;background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--warn);border-radius:18px;padding:24px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
 .modal h3{margin:0 0 6px;font-size:18px;color:var(--warn)}
@@ -121,6 +129,10 @@ textarea:focus,input:focus,select:focus{border-color:var(--accent)}
       <textarea id="ctx" placeholder="Actuele cijfers, team, lopende trajecten, wat nu speelt…"></textarea>
       <div class="row" style="margin-top:8px"><button class="btn sm" id="saveCtx" type="button">Opslaan</button></div>
     </div>
+    <label>Achtergronddocumenten (optioneel)</label>
+    <div class="drop" id="drop">Sleep bestanden hierheen of klik om te kiezen — PDF, Word (.docx), tekst of markdown. Wordt alleen in deze browser uitgelezen en niet bewaard.</div>
+    <input type="file" id="fileIn" class="hidden" multiple accept=".pdf,.docx,.txt,.md,.csv,.json">
+    <div class="docs" id="docs"></div>
     <div id="profBox" class="hidden">
       <label><span id="profNaam">Profiel</span> <button class="btn ghost sm" type="button" id="editProf" style="margin-left:6px">bewerken</button> <button class="btn ghost sm hidden" type="button" id="resetProf">herstel standaard</button></label>
       <textarea id="prof" readonly style="min-height:150px;font-size:13px;color:var(--muted)"></textarea>
@@ -239,7 +251,7 @@ function anonymize(text,found){
 }
 /* gate: roept cb() aan als er niets gevonden is of de gebruiker bevestigt; fields = [{el}] om te anonimiseren */
 function privacyGate(fields,cb){
-  const text=fields.map(f=>f.el.value||"").join("\n");
+  const text=fields.map(f=>f.el.value||"").join("\n")+"\n"+(fields.some(f=>f.el.id==="vraag")?docsText():"");
   const found=scanSensitive(text);
   if(!found.length) return cb();
   $("privList").innerHTML=found.map(f=>`<li><b>${esc(f.k)}</b>: ${f.items.map(i=>`<code>${esc(i)}</code>`).join(" ")}</li>`).join("");
@@ -248,7 +260,7 @@ function privacyGate(fields,cb){
   const close=()=>{$("privOverlay").classList.add("hidden");};
   $("privEdit").onclick=()=>{close(); fields[0].el.focus();};
   $("privGo").onclick=()=>{close(); cb();};
-  $("privAnon").onclick=()=>{ for(const f of fields){ const ff=scanSensitive(f.el.value||""); f.el.value=anonymize(f.el.value||"",ff); } close(); cb(); };
+  $("privAnon").onclick=()=>{ for(const f of fields){ const ff=scanSensitive(f.el.value||""); f.el.value=anonymize(f.el.value||"",ff); } if(fields.some(f=>f.el.id==="vraag")) for(const d of state.docs){ const ff=scanSensitive(d.text); d.text=anonymize(d.text,ff); } close(); cb(); };
 }
 /* ---------- adviseurs: fictieve denkstijlen ---------- */
 const POOL=[
@@ -343,11 +355,45 @@ function hideErr(id){$(id).classList.add("hidden");}
 function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 function initials(n){return n.split(" ").map(w=>w[0]).slice(0,2).join("");}
 function profText(){const p=$("profiel").value; if(!PROFILES[p]) return ""; try{return localStorage.getItem("ak_prof_"+p)||PROFILES[p].tekst;}catch{return PROFILES[p].tekst;}}
+/* ---------- documenten ---------- */
+const DOC_MAX=12000; state.docs=[];
+async function extractText(file){
+  const ext=(file.name.split(".").pop()||"").toLowerCase();
+  if(ext==="pdf"){
+    if(!window.pdfjsLib) throw new Error("PDF-bibliotheek niet geladen");
+    pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise; let out="";
+    for(let i=1;i<=Math.min(pdf.numPages,40);i++){const pg=await pdf.getPage(i);const tc=await pg.getTextContent();out+=tc.items.map(x=>x.str).join(" ")+"\n"; if(out.length>DOC_MAX*2) break;}
+    return out;
+  }
+  if(ext==="docx"){ if(!window.mammoth) throw new Error("Word-bibliotheek niet geladen"); const r=await mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()}); return r.value; }
+  return await file.text();
+}
+function renderDocs(){
+  $("docs").innerHTML=state.docs.map((d,i)=>`<div class="doc"><span>📄</span><span class="n">${esc(d.name)}</span><span class="m">${d.err?esc(d.err):(d.text.length>DOC_MAX?`${DOC_MAX.toLocaleString("nl")} van ${d.text.length.toLocaleString("nl")} tekens`:d.text.length.toLocaleString("nl")+" tekens")}</span><button type="button" data-i="${i}" title="Verwijderen">×</button></div>`).join("");
+  $("docs").querySelectorAll("button").forEach(b=>b.onclick=()=>{state.docs.splice(+b.dataset.i,1);renderDocs();});
+}
+async function addFiles(files){
+  for(const f of files){
+    if(f.size>15*1024*1024){state.docs.push({name:f.name,text:"",err:"te groot (max 15 MB)"});continue;}
+    const d={name:f.name,text:"",err:"lezen…"}; state.docs.push(d); renderDocs();
+    try{ const t=(await extractText(f)).replace(/\s+\n/g,"\n").replace(/[ \t]{2,}/g," ").trim(); d.text=t; d.err=t?"":"geen tekst gevonden (gescande PDF?)"; }
+    catch(e){ d.err="kon niet lezen: "+(e.message||e); }
+    renderDocs();
+  }
+}
+$("drop").onclick=()=>$("fileIn").click();
+$("fileIn").onchange=e=>{addFiles([...e.target.files]);e.target.value="";};
+$("drop").ondragover=e=>{e.preventDefault();$("drop").classList.add("over");};
+$("drop").ondragleave=()=>$("drop").classList.remove("over");
+$("drop").ondrop=e=>{e.preventDefault();$("drop").classList.remove("over");addFiles([...e.dataTransfer.files]);};
+function docsText(){return state.docs.filter(d=>d.text).map(d=>`--- Document: ${d.name} ---\n${d.text.slice(0,DOC_MAX)}${d.text.length>DOC_MAX?"\n[… ingekort]":""}`).join("\n\n");}
 function ctxText(){
   const p=$("profiel").value; let t="";
   if(PROFILES[p]) t+="BEDRIJFSPROFIEL "+PROFILES[p].naam+":\n"+profText()+"\n";
   let own=""; try{own=localStorage.getItem("ak_ctx")||"";}catch{}
   if((p==="own"||$("useCtx").checked)&&own) t+=(t?"\nAANVULLENDE CONTEXT:\n":"")+own;
+  const dt=docsText(); if(dt) t+=(t?"\n\n":"")+"ACHTERGRONDDOCUMENTEN (door de vraagsteller aangeleverd; gebruik als feitelijke context):\n"+dt;
   return t.trim();
 }
 async function ask(prompt,opts={}){
