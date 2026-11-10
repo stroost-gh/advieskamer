@@ -6,7 +6,7 @@ Live versie (claude.ai artifact): https://claude.ai/artifact/LX2n3MFw4oithDnHeSn
 
 ## Opbouw
 
-1. **Vraag** – vrije tekst, met keuze van een ingebouwd bedrijfsprofiel (DCMR Milieudienst Rijnmond) en optioneel eigen aanvullende context (lokaal opgeslagen in de browser). Achtergronddocumenten (PDF, Word, tekst, markdown) kunnen worden geüpload; ze worden in de browser uitgelezen (pdf.js, mammoth) en als context meegestuurd, niet bewaard.
+1. **Vraag** – vrije tekst, met keuze van een ingebouwd bedrijfsprofiel (DCMR Milieudienst Rijnmond) en optioneel eigen aanvullende context (lokaal opgeslagen in de browser). Achtergronddocumenten (PDF, Word, tekst, markdown) kunnen worden geüpload; ze worden in de browser uitgelezen (pdf.js, mammoth) en als context meegestuurd, niet bewaard. Documenten langer dan ca. 12.000 tekens worden door de AI samengevat (in delen) in plaats van afgekapt.
 2. **Verduidelijking** – de AI stelt 2–3 vragen.
 3. **Briefing** – beslissing, context, doel, opties A/B/C, zorgen, tijdshorizon; aannames gemarkeerd als "(voorstel)".
 4. **Adviesraad** – de voorzitter selecteert 7 adviseurs; elk adviseert vanuit zijn eigen denkkader ("school") en stemt.

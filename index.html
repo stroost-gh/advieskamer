@@ -256,9 +256,11 @@ function privacyGate(fields,cb){
   if(!found.length) return cb();
   $("privList").innerHTML=found.map(f=>`<li><b>${esc(f.k)}</b>: ${f.items.map(i=>`<code>${esc(i)}</code>`).join(" ")}</li>`).join("");
   $("privAnon").classList.toggle("hidden",!found.some(f=>f.tag));
+  const isDoc=!fields[0].el.focus; $("privEdit").classList.toggle("hidden",isDoc);
+  $("privTip").textContent=isDoc?"Dit document wordt naar de AI gestuurd om het samen te vatten. Kies anonimiseren of ga door; verwijder het document als je dat niet wilt.":"Tip: gebruik rollen of initialen in plaats van namen, rond cijfers af en laat identificerende nummers weg.";
   $("privOverlay").classList.remove("hidden");
   const close=()=>{$("privOverlay").classList.add("hidden");};
-  $("privEdit").onclick=()=>{close(); fields[0].el.focus();};
+  $("privEdit").onclick=()=>{close(); if(fields[0].el.focus) fields[0].el.focus(); else cb();};
   $("privGo").onclick=()=>{close(); cb();};
   $("privAnon").onclick=()=>{ for(const f of fields){ const ff=scanSensitive(f.el.value||""); f.el.value=anonymize(f.el.value||"",ff); } if(fields.some(f=>f.el.id==="vraag")) for(const d of state.docs){ const ff=scanSensitive(d.text); d.text=anonymize(d.text,ff); } close(); cb(); };
 }
@@ -370,7 +372,7 @@ async function extractText(file){
   return await file.text();
 }
 function renderDocs(){
-  $("docs").innerHTML=state.docs.map((d,i)=>`<div class="doc"><span>📄</span><span class="n">${esc(d.name)}</span><span class="m">${d.err?esc(d.err):(d.text.length>DOC_MAX?`${DOC_MAX.toLocaleString("nl")} van ${d.text.length.toLocaleString("nl")} tekens`:d.text.length.toLocaleString("nl")+" tekens")}</span><button type="button" data-i="${i}" title="Verwijderen">×</button></div>`).join("");
+  $("docs").innerHTML=state.docs.map((d,i)=>`<div class="doc"><span>📄</span><span class="n">${esc(d.name)}</span><span class="m">${d.err?esc(d.err):(d.note?esc(d.note)+", ":"")+(d.text.length>DOC_MAX?`${DOC_MAX.toLocaleString("nl")} van ${d.text.length.toLocaleString("nl")} tekens`:d.text.length.toLocaleString("nl")+" tekens")}</span><button type="button" data-i="${i}" title="Verwijderen">×</button></div>`).join("");
   $("docs").querySelectorAll("button").forEach(b=>b.onclick=()=>{state.docs.splice(+b.dataset.i,1);renderDocs();});
 }
 async function addFiles(files){
@@ -380,7 +382,28 @@ async function addFiles(files){
     try{ const t=(await extractText(f)).replace(/\s+\n/g,"\n").replace(/[ \t]{2,}/g," ").trim(); d.text=t; d.err=t?"":"geen tekst gevonden (gescande PDF?)"; }
     catch(e){ d.err="kon niet lezen: "+(e.message||e); }
     renderDocs();
+    if(d.text.length>DOC_MAX) await summarizeDoc(d);
   }
+}
+/* lange documenten: samenvatten door de AI in plaats van afkappen */
+async function summarizeDoc(d){
+  if(!sample){ d.note="ingekort (AI niet beschikbaar voor samenvatting)"; renderDocs(); return; }
+  const fake={value:d.text,id:"doc"};
+  await new Promise(res=>privacyGate([{el:fake}],res));
+  d.text=fake.value; d.orig=d.text.length; d.err="samenvatten…"; renderDocs();
+  try{
+    const CH=20000; const parts=[]; for(let i=0;i<d.text.length;i+=CH) parts.push(d.text.slice(i,i+CH));
+    const sums=[];
+    for(let i=0;i<parts.length;i++){
+      d.err=`samenvatten… deel ${i+1}/${parts.length}`; renderDocs();
+      const r=await ask(`Vat onderstaand fragment (deel ${i+1} van ${parts.length} van het document "${d.name}") samen als feitelijke achtergrondinformatie voor een adviesraad. Behoud alle concrete feiten, cijfers, namen van organisaties, data, eisen, besluiten, risico's en open punten; laat opmaak, herhaling en stijl weg. Nederlands, maximaal ${Math.floor(DOC_MAX/parts.length/1.2)} tekens, als compacte opsomming.\n\nFRAGMENT:\n"""${parts[i]}"""\n\nAntwoord uitsluitend als JSON: {"samenvatting":"..."}`,{modelTier:"quick"});
+      sums.push(r.samenvatting||"");
+    }
+    let s=sums.join("\n");
+    if(s.length>DOC_MAX){ const r=await ask(`Voeg onderstaande deelsamenvattingen van het document "${d.name}" samen tot één samenhangende, feitelijke samenvatting van maximaal ${DOC_MAX-500} tekens. Behoud concrete feiten, cijfers, eisen en besluiten.\n\n"""${s}"""\n\nAntwoord uitsluitend als JSON: {"samenvatting":"..."}`,{modelTier:"quick"}); s=r.samenvatting||s.slice(0,DOC_MAX); }
+    d.text="[AI-samenvatting van het origineel]\n"+s; d.err=""; d.note=`samengevat (origineel ${d.orig.toLocaleString("nl")} tekens)`;
+  }catch(e){ d.err=""; d.note="samenvatten mislukt, ingekort: "+errMsg(e); }
+  renderDocs();
 }
 $("drop").onclick=()=>$("fileIn").click();
 $("fileIn").onchange=e=>{addFiles([...e.target.files]);e.target.value="";};
