@@ -64,8 +64,9 @@ textarea:focus,input:focus,select:focus{border-color:var(--accent)}
 .seat .nm{font-size:12px;font-weight:700;margin-top:8px}
 .seat .rl{font-size:10px;color:var(--muted)}
 .seat .st{font-size:10px;color:var(--accent2);margin-top:3px;min-height:12px}
-.seat:nth-child(1),.seat:nth-child(7){margin-top:40px}
-.seat:nth-child(2),.seat:nth-child(6){margin-top:20px}
+.seats.n7 .seat:nth-child(1),.seats.n7 .seat:nth-child(7){margin-top:40px}
+.seats.n7 .seat:nth-child(2),.seats.n7 .seat:nth-child(6){margin-top:20px}
+.seats.big .seat{width:108px} .seats.big .seat .av{width:70px;height:70px}
 .chair{display:flex;gap:14px;align-items:flex-start;margin-top:22px;background:#0d1538;border:1px solid var(--line);border-radius:14px;padding:16px}
 .chair .av{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:800;flex:none}
 .chair .who{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
@@ -429,6 +430,7 @@ function readBriefing(){
 }
 function briefingText(b){const c=ctxText();return (c?`BEDRIJFSCONTEXT:\n${c}\n\n`:"")+`Beslissing: ${b.vraag}\nContext: ${b.context}\nDoel: ${b.doel}\nOpties:\n${b.opties.map(o=>`  ${o[0]}: ${o[1]}`).join("\n")}\nZorgen/randvoorwaarden: ${b.zorgen}\nTijdshorizon: ${b.tijd}`;}
 function renderSeats(raad,active,done){
+  $("seats").className="seats "+(raad.length<=7?"n7":"big");
   $("seats").innerHTML=raad.map((a,i)=>{const adv=state.adviezen[i];
     return `<div class="seat ${i===active?"talking":adv?"done":"idle"}"><div class="av">${avatarSVG(a)}${adv?`<span class="badge vote ${adv.optie||"none"}">${adv.optie||"–"}</span>`:""}</div><div class="nm">${esc(a.naam)}</div><div class="rl">${esc(a.rol)}<br><span style="color:var(--accent2)">school: ${esc(a.school)}</span></div><div class="st">${i===active?"Aan het woord":adv?`Optie ${adv.optie||"–"}`:(done?"":"Wacht")}</div></div>`;}).join("");
 }
@@ -446,22 +448,23 @@ async function doStartRaad(){
   const sig=state.abort.signal;
   try{
     /* 1. voorzitter kiest 7 */
-    const sel=await ask(`Je bent voorzitter van een adviesraad. Kies uit onderstaande adviseurs (fictieve denkstijlen) precies 7 die het meest relevant zijn voor deze briefing en voor de organisatiecontext (publieke organisatie: kies vooral de bestuurlijk-juridische en uitvoeringsrollen; ondernemer: vooral de commerciële en financiële rollen), en bepaal een logische spreekvolgorde (begin met wie het kader zet, eindig met de advocaat van de duivel als die gekozen is).
+    const sel=await ask(`Je bent voorzitter van een adviesraad. Kies uit onderstaande adviseurs (fictieve denkstijlen) de adviseurs die het meest relevant zijn voor deze briefing. Uitgangspunt is 7. Alleen als het vraagstuk aantoonbaar meerdere domeinen raakt (bijv. juridisch én financieel én verzuim) mag je er maximaal 10 kiezen; kies nooit minder dan 7 en voeg geen adviseur toe zonder duidelijke meerwaarde. Kies en voor de organisatiecontext (publieke organisatie: kies vooral de bestuurlijk-juridische en uitvoeringsrollen; ondernemer: vooral de commerciële en financiële rollen), en bepaal een logische spreekvolgorde (begin met wie het kader zet, eindig met de advocaat van de duivel als die gekozen is).
 Adviseurs:
 ${POOL.map(a=>`- id=${a.id}: ${a.rol} (school: ${a.school}) — ${a.stijl}`).join("\n")}
 
 Briefing:
 ${briefingText(b)}
 
-Antwoord uitsluitend als JSON: {"gekozen":["id1","id2","id3","id4","id5","id6","id7"],"opening":"1-2 zinnen waarin je als voorzitter de vraag scherp neerzet en de raad opent (Nederlands, je-vorm richting de ondernemer)"}`,{modelTier:"quick",signal:sig});
+Antwoord uitsluitend als JSON: {"gekozen":["id1","id2","id3","id4","id5","id6","id7"],"motivatie_extra":"alleen als je meer dan 7 kiest: één zin waarom; anders leeg","opening":"1-2 zinnen waarin je als voorzitter de vraag scherp neerzet en de raad opent (Nederlands, je-vorm richting de vraagsteller)"}`,{modelTier:"quick",signal:sig});
     const ids=(sel.gekozen||[]).filter(id=>POOL.some(p=>p.id===id)); const extra=POOL.filter(p=>!ids.includes(p.id)).map(p=>p.id);
-    state.raad=[...ids,...extra].slice(0,7).map(id=>POOL.find(p=>p.id===id));
-    $("chairText").textContent=sel.opening||"De raad is compleet. We gaan van start.";
+    const n=Math.min(10,Math.max(7,ids.length)); state.raad=[...ids,...extra].slice(0,n).map(id=>POOL.find(p=>p.id===id));
+    $("chairText").textContent=(sel.opening||"De raad is compleet. We gaan van start.")+(state.raad.length>7&&sel.motivatie_extra?" "+sel.motivatie_extra:"");
+    $("raadTitel").textContent=b.vraag+(state.raad.length>7?` (${state.raad.length} adviseurs)`:"");
     renderSeats(state.raad,-1,false); renderTally(b);
     /* 2. adviseurs om de beurt */
     for(let i=0;i<state.raad.length;i++){
       if(sig.aborted) break; const a=state.raad[i];
-      $("statusPill").textContent=`${a.naam} is aan het woord (${i+1}/7)`; renderSeats(state.raad,i,false);
+      $("statusPill").textContent=`${a.naam} is aan het woord (${i+1}/${state.raad.length})`; renderSeats(state.raad,i,false);
       const eerder=state.adviezen.map((x,j)=>`${state.raad[j].rol} koos ${x.optie}: ${x.kern}`).join("\n");
       const r=await ask(`Je bent ${a.naam}, ${a.rol}, lid van een adviesraad. Jouw denkstijl: ${a.stijl}
 Je past de denkkaders van jouw school (${a.school}) expliciet toe op deze casus en mag die kaders bij naam noemen, maar je doet je niet voor als die persoon en verzint geen citaten van echte personen.
@@ -479,7 +482,7 @@ Antwoord uitsluitend als JSON: {"advies":"jouw betoog","optie":"A|B|C (de letter
     if(sig.aborted) return;
     /* 3. voorzitter besluit */
     $("statusPill").textContent="Voorzitter formuleert het besluit…"; $("chairText").textContent="Dank. Ik weeg de perspectieven en kom tot één advies.";
-    const f=await ask(`Je bent voorzitter van een adviesraad voor een ondernemer. De 7 adviseurs hebben gesproken. Formuleer één scherpe beslissing: geen compromis-brij, maar een duidelijke keuze met voorwaarden. Nederlands, je-vorm, zakelijk en warm.
+    const f=await ask(`Je bent voorzitter van een adviesraad. De ${state.raad.length} adviseurs hebben gesproken. Formuleer één scherpe beslissing: geen compromis-brij, maar een duidelijke keuze met voorwaarden. Nederlands, je-vorm, zakelijk en warm.
 
 Briefing:
 ${briefingText(b)}
